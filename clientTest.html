@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>D3 Testing Animated Force Layout modifications!</title>
+        <style>
+
+            .node {
+                stroke: #fff;
+                stroke-width: 1.5px;
+            }
+
+            .link {
+                stroke: #999;
+                stroke-opacity: .6;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script>
+
+            var width = 960,
+                height = 500;
+
+            var color = d3.scale.category20();
+
+            var force = d3.layout.force()
+            .charge(-120)
+            .linkDistance(30)
+            .size([width, height])
+            .on("tick", tick);
+
+            var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+            var nodes = [];
+            var links = [];
+            var node = svg.selectAll(".node")
+            var link = svg.selectAll(".link")
+            readFromFile();
+            setTimeout(addNode, 3000)
+            function addNode(){
+                console.log("calling addNode")
+                var a = nodes[0], b = {name:"Mahesh.Murag",group:4}, c = nodes[1];
+                nodes.push(b);
+                links.push({source: a, target: b, value: 14});
+                start();
+                update();
+            }
+
+            function removeNode(){
+                console.log("calling removeNode")
+                nodes.splice(1,1);
+                links.pop();
+                start();
+                update();
+            }
+
+            function tick(){
+                    link.attr("x1", function(d) { return d.source.x; })
+                        .attr("y1", function(d) { return d.source.y; })
+                        .attr("x2", function(d) { return d.target.x; })
+                        .attr("y2", function(d) { return d.target.y; });
+
+                    node.attr("cx", function(d) { return d.x; })
+                        .attr("cy", function(d) { return d.y; });
+            }
+
+            function start(){
+                console.log("called start method")
+                force
+                    .nodes(nodes)
+                    .links(links)
+                    .start();
+            }
+
+            function readFromFile(){
+                var linkToJSON = "https://gist.githubusercontent.com/fredbenenson/4212290/raw/38c07e833ba7dd2f5cff1a2316c2559c01b774d4/miserables.json";
+                var linkToJSON2 = "https://gist.githubusercontent.com/mash99/1d2c683d171765ba7771/raw/b8a28e7bd07377773cb86894f67fe68173cf9c0f/jsonstr.json";
+                d3.json(linkToJSON2,
+                    function(error, graph) {
+                        console.log("read")
+                        if (error) throw error;
+                        for(var i = 0; i < graph.nodes.length; i++)
+                            nodes.push(graph.nodes[i])
+                        for(var i = 0; i < graph.links.length; i++)
+                            links.push(graph.links[i])
+                        start();
+                        update();
+                    }
+                );
+
+            }
+
+            function update(){
+                link = link
+                    .data(links);
+
+                link
+                    .enter().append("line")
+                    .attr("class", "link")
+                    .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+                node = node
+                    .data(nodes);
+
+                node
+                    .enter().append("circle")
+                    .attr("class", "node")
+                    .attr("r", 5)
+                    .style("fill", function(d) { return color(d.group); })
+                    .call(force.drag);
+
+                node
+                    .append("title")
+                    .text(function(d) { return d.name; });
+
+                node.exit().remove();
+                link.exit().remove();
+            }
+        </script>
+        <button type="button" onclick="addNode();">Add node</button>
+        <button type="button" onclick="removeNode();">Remove node</button>
+    </body>
+</html>
